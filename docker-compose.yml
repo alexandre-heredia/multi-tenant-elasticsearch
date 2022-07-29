@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+
+  database:
+    image: mysql:8.0.25
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=lportal
+    command: --character-set-server=utf8 --collation-server=utf8_general_ci --character-set-filesystem=utf8 --lower-case-table-names=0
+    ports:
+      - "3306:3306"
+
+  dxp71:
+    image: liferay/dxp:7.1.10-dxp-27
+    environment:
+      - LIFERAY_DISABLE_TRIAL_LICENSE=false
+      #- LIFERAY_MODULE_PERIOD_FRAMEWORK_PERIOD_PROPERTIES_PERIOD_OSGI_PERIOD_CONSOLE=0.0.0.0:11311
+      - LIFERAY_SETUP_PERIOD_WIZARD_PERIOD_ADD_PERIOD_SAMPLE_PERIOD_DATA=false
+      - LIFERAY_SETUP_PERIOD_WIZARD_PERIOD_ENABLED=false
+      - LIFERAY_TERMS_PERIOD_OF_PERIOD_USE_PERIOD_REQUIRED=false
+      - LIFERAY_USERS_PERIOD_REMINDER_PERIOD_QUERIES_PERIOD_ENABLED=false
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dxp71/deploy:/mnt/liferay/deploy
+      - ./dxp71/files:/mnt/liferay/files
+      - ./dxp71/logs:/opt/liferay/logs
+
+  dxp73:
+   image: liferay/dxp:7.3.10-u7
+   environment:
+      - LIFERAY_DISABLE_TRIAL_LICENSE=false
+      - LIFERAY_JDBC_PERIOD_DEFAULT_PERIOD_DRIVER_UPPERCASEC_LASS_UPPERCASEN_AME=com.mysql.cj.jdbc.Driver
+      - LIFERAY_JDBC_PERIOD_DEFAULT_PERIOD_URL=jdbc:mysql://database/lportal?characterEncoding=UTF-8&dontTrackOpenResources=true&holdResultsOpenOverStatementClose=true&serverTimezone=GMT&useFastDateParsing=false&useUnicode=true
+      - LIFERAY_JDBC_PERIOD_DEFAULT_PERIOD_USERNAME=root
+      - LIFERAY_JDBC_PERIOD_DEFAULT_PERIOD_PASSWORD=root
+      - LIFERAY_RETRY_PERIOD_JDBC_PERIOD_ON_PERIOD_STARTUP_PERIOD_DELAY=20
+      - LIFERAY_RETRY_PERIOD_JDBC_PERIOD_ON_PERIOD_STARTUP_PERIOD_MAX_PERIOD_RETRIES=10
+      - LIFERAY_MODULE_PERIOD_FRAMEWORK_PERIOD_PROPERTIES_PERIOD_OSGI_PERIOD_CONSOLE=0.0.0.0:11311
+      - LIFERAY_SETUP_PERIOD_WIZARD_PERIOD_ADD_PERIOD_SAMPLE_PERIOD_DATA=false
+      - LIFERAY_SETUP_PERIOD_WIZARD_PERIOD_ENABLED=false
+      - LIFERAY_TERMS_PERIOD_OF_PERIOD_USE_PERIOD_REQUIRED=false
+      - LIFERAY_USERS_PERIOD_REMINDER_PERIOD_QUERIES_PERIOD_ENABLED=false
+   ports:
+      - "8090:8080"
+   volumes:
+      - ./dxp73/deploy:/mnt/liferay/deploy
+      - ./dxp73/files:/mnt/liferay/files
+      - ./dxp73/logs:/opt/liferay/logs
+   depends_on:
+      - database
+      - search
+
+  search:
+    image: test-es-install/elasticsearch
+    build: ./elasticsearch/
+    environment:
+      - cluster.name=LiferayElasticsearchCluster
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.type=single-node"
+      - "node.name=es-node1"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
